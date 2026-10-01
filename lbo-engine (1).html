@@ -1,0 +1,1492 @@
+<title>LBO Engine</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #FAF9F7;
+    --surface: #FFFFFF;
+    --surface-2: #F4F2EE;
+    --border: #E8E4DC;
+    --text: #0D0D0D;
+    --text-2: #5A5650;
+    --text-3: #9A958E;
+    --gold: #C9A84C;
+    --gold-light: #F5EDD5;
+    --green: #2D6A4F;
+    --green-light: #D8F3DC;
+    --red: #C1121F;
+    --red-light: #FFE8E8;
+    --radius: 6px;
+    --mono: 'DM Mono', 'Courier New', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111010;
+      --surface: #1A1917;
+      --surface-2: #222120;
+      --border: #2E2C29;
+      --text: #F0EBE1;
+      --text-2: #A09990;
+      --text-3: #605A52;
+      --gold-light: #2A2415;
+      --green-light: #0A1F12;
+      --red-light: #1F0A0A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111010;
+    --surface: #1A1917;
+    --surface-2: #222120;
+    --border: #2E2C29;
+    --text: #F0EBE1;
+    --text-2: #A09990;
+    --text-3: #605A52;
+    --gold-light: #2A2415;
+    --green-light: #0A1F12;
+    --red-light: #1F0A0A;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-logo {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .header-logo span { color: var(--gold); }
+  .header-sep {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
+  }
+  .header-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 10px;
+  }
+
+  .ticker-row {
+    display: flex;
+    gap: 8px;
+  }
+  .ticker-input {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .ticker-input:focus { border-color: var(--gold); }
+  .ticker-input::placeholder { color: var(--text-3); text-transform: uppercase; }
+
+  .ticker-suggest {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    z-index: 100;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .ticker-suggest-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 12px;
+  }
+  .ticker-suggest-item:hover { background: var(--surface-2); }
+  .ticker-suggest-sym { font-family: var(--mono); font-weight: 600; color: var(--text); min-width: 44px; }
+  .ticker-suggest-name { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ticker-wrap { position: relative; flex: 1; }
+
+  .btn-fetch {
+    padding: 9px 14px;
+    background: var(--gold);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .btn-fetch:hover { opacity: 0.88; }
+  .btn-fetch:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .company-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: none;
+  }
+  .company-card.visible { display: block; }
+  .company-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .company-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+  }
+  .company-stat { display: flex; flex-direction: column; gap: 1px; }
+  .company-stat-label { font-size: 10px; color: var(--text-3); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+  .company-stat-val { font-family: var(--mono); font-size: 12px; color: var(--text); font-weight: 500; }
+
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-2);
+    display: flex;
+    justify-content: space-between;
+  }
+  .form-label-val {
+    font-family: var(--mono);
+    color: var(--gold);
+    font-weight: 500;
+  }
+  .slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+  }
+  .slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+    border: none;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .form-input {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: var(--gold); }
+
+  .btn-run {
+    width: 100%;
+    padding: 11px;
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-run:hover { opacity: 0.82; }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Main panel */
+  .main {
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .results-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    color: var(--text-3);
+    min-height: 300px;
+  }
+  .results-empty-icon {
+    font-size: 32px;
+    opacity: 0.4;
+  }
+  .results-empty p { font-size: 13px; }
+
+  .results-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .results-company {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .results-ticker {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 3px;
+  }
+
+  /* KPI row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 5px;
+  }
+  .kpi-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+  .kpi-card.highlight-gold { border-color: var(--gold); background: var(--gold-light); }
+  .kpi-card.highlight-gold .kpi-value { color: var(--gold); }
+  .kpi-card.highlight-green { border-color: var(--green); background: var(--green-light); }
+  .kpi-card.highlight-green .kpi-value { color: var(--green); }
+
+  /* Sections */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    background: var(--surface-2);
+  }
+  .panel-body { padding: 16px; }
+
+  /* Table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .data-table th {
+    text-align: right;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table th:first-child { text-align: left; }
+  .data-table td {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td:first-child {
+    text-align: left;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    color: var(--text-2);
+    font-weight: 500;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--surface-2); }
+
+  /* Capital stack bar */
+  .stack-bar {
+    display: flex;
+    height: 28px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .stack-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #fff;
+    transition: flex 0.4s ease;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .seg-equity { background: var(--gold); color: #fff; }
+  .seg-senior { background: #3A3A3A; }
+  .seg-mezz { background: #888; }
+
+  .stack-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Sensitivity mini-table */
+  .sensitivity-grid {
+    overflow-x: auto;
+  }
+  .sens-table {
+    border-collapse: collapse;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sens-table th, .sens-table td {
+    padding: 6px 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .sens-table th {
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .sens-cell-high { background: var(--green-light); color: var(--green); font-weight: 500; }
+  .sens-cell-mid { background: var(--gold-light); color: #8B6914; font-weight: 500; }
+  .sens-cell-low { background: var(--red-light); color: var(--red); font-weight: 500; }
+  .sens-axis-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 6px;
+  }
+  .sens-wrapper { display: flex; gap: 24px; flex-wrap: wrap; }
+
+  /* Status */
+  .status-bar {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: -8px;
+  }
+  .status-bar.error { background: var(--red-light); color: var(--red); }
+  .status-bar.info { background: var(--gold-light); color: #7A5B1A; }
+
+  /* Scenario tabs */
+  .scenario-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .scenario-tab {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--surface-2);
+    color: var(--text-2);
+    transition: all 0.15s;
+  }
+  .scenario-tab:hover { border-color: var(--gold); color: var(--text); }
+  .scenario-tab.active { background: var(--gold); border-color: var(--gold); color: #fff; }
+  .scenario-tab.down-tab.active { background: var(--red); border-color: var(--red); }
+  .scenario-tab.up-tab.active { background: var(--green); border-color: var(--green); }
+
+  /* Model checks */
+  .checks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+  .check-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .check-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .check-ok .check-dot { background: var(--green); }
+  .check-warn .check-dot { background: var(--gold); }
+  .check-err .check-dot { background: var(--red); }
+  .check-ok { color: var(--text-2); }
+  .check-warn { color: #7A5B1A; }
+  .check-err { color: var(--red); }
+  .checks-summary {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; margin-bottom: 10px; padding: 8px 12px;
+    border-radius: var(--radius);
+  }
+  .checks-summary.all-pass { background: var(--green-light); color: var(--green); }
+  .checks-summary.has-warn { background: var(--gold-light); color: #7A5B1A; }
+  .checks-summary.has-err { background: var(--red-light); color: var(--red); }
+
+  /* Data disclaimer */
+  .disclaimer {
+    font-size: 11px; color: var(--text-3);
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px 12px;
+    margin-top: -8px;
+  }
+
+  /* FCF bridge */
+  .bridge-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .bridge-row:last-child { border-bottom: none; font-weight: 600; }
+  .bridge-row.subtotal { border-top: 1px solid var(--text-3); padding-top: 8px; margin-top: 4px; }
+  .bridge-label { color: var(--text-2); }
+  .bridge-label.indent { padding-left: 14px; color: var(--text-3); }
+  .bridge-val { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .bridge-val.neg { color: var(--red); }
+  .bridge-val.pos { color: var(--green); }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .main { padding: 16px; }
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+
+<div class="header">
+  <div class="header-logo">Rook<span>onomy</span></div>
+  <div class="header-sep"></div>
+  <div class="header-title">LBO Underwriting Engine</div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- Company -->
+    <div>
+      <div class="section-label">Company</div>
+      <div class="ticker-row">
+        <div class="ticker-wrap">
+          <input class="ticker-input" id="ticker" placeholder="SEARCH TICKER / NAME" autocomplete="off" oninput="onTickerInput()" onkeydown="onTickerKey(event)">
+          <div class="ticker-suggest" id="ticker-suggest" hidden></div>
+        </div>
+        <button class="btn-fetch" id="btn-fetch" onclick="selectTicker()">Load</button>
+      </div>
+      <div id="company-card" class="company-card" style="margin-top:10px;">
+        <div class="company-name" id="co-name">—</div>
+        <div class="company-grid">
+          <div class="company-stat">
+            <span class="company-stat-label">Revenue</span>
+            <span class="company-stat-val" id="co-rev">—</span>
+          </div>
+          <div class="company-stat">
+            <span class="company-stat-label">EBITDA</span>
+            <span class="company-stat-val" id="co-ebitda">—</span>
+          </div>
+          <div class="company-stat">
+            <span class="company-stat-label">Mkt Cap</span>
+            <span class="company-stat-val" id="co-mktcap">—</span>
+          </div>
+          <div class="company-stat">
+            <span class="company-stat-label">Price</span>
+            <span class="company-stat-val" id="co-price">—</span>
+          </div>
+        </div>
+      </div>
+      <div id="status-msg" class="status-bar" hidden></div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Entry assumptions -->
+    <div>
+      <div class="section-label">Entry Assumptions</div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">
+          Entry Multiple (EV/EBITDA)
+          <span class="form-label-val" id="lbl-entry">10.0x</span>
+        </label>
+        <input class="slider" id="sl-entry" type="range" min="5" max="20" step="0.5" value="10" oninput="updateLabel('sl-entry','lbl-entry','x')">
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">
+          Leverage Multiple (Debt/EBITDA)
+          <span class="form-label-val" id="lbl-lev">4.5x</span>
+        </label>
+        <input class="slider" id="sl-lev" type="range" min="0" max="7" step="0.25" value="4.5" oninput="updateLabel('sl-lev','lbl-lev','x')">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Senior %</label>
+          <input class="form-input" id="inp-senior-pct" type="number" value="70" min="0" max="100" placeholder="70">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mezz %</label>
+          <input class="form-input" id="inp-mezz-pct" type="number" value="30" min="0" max="100" placeholder="30">
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:10px;">
+        <div class="form-group">
+          <label class="form-label">Senior Rate</label>
+          <input class="form-input" id="inp-senior-rate" type="number" value="7.5" step="0.25" placeholder="7.5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mezz Rate (PIK)</label>
+          <input class="form-input" id="inp-mezz-rate" type="number" value="12" step="0.25" placeholder="12">
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Growth & Exit -->
+    <div>
+      <div class="section-label">Growth &amp; Exit</div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">
+          EBITDA Growth / yr
+          <span class="form-label-val" id="lbl-growth">8.0%</span>
+        </label>
+        <input class="slider" id="sl-growth" type="range" min="-5" max="30" step="0.5" value="8" oninput="updateLabel('sl-growth','lbl-growth','%')">
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">
+          Hold Period (years)
+          <span class="form-label-val" id="lbl-hold">5 yrs</span>
+        </label>
+        <input class="slider" id="sl-hold" type="range" min="1" max="10" step="1" value="5" oninput="updateLabel('sl-hold','lbl-hold',' yrs')">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          Exit Multiple (EV/EBITDA)
+          <span class="form-label-val" id="lbl-exit">10.0x</span>
+        </label>
+        <input class="slider" id="sl-exit" type="range" min="5" max="20" step="0.5" value="10" oninput="updateLabel('sl-exit','lbl-exit','x')">
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div>
+      <div class="section-label">Quick Scenarios</div>
+      <div class="scenario-tabs">
+        <button class="scenario-tab" onclick="applyScenario('base')">Base</button>
+        <button class="scenario-tab up-tab" onclick="applyScenario('up')">Upside</button>
+        <button class="scenario-tab down-tab" onclick="applyScenario('down')">Downside</button>
+        <button class="scenario-tab down-tab" onclick="applyScenario('stress')">Stress</button>
+      </div>
+      <div id="scenario-desc" style="font-size:11px;color:var(--text-3);line-height:1.4;"></div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div>
+      <div class="section-label">EBITDA Override</div>
+      <div class="form-group">
+        <label class="form-label">Entry EBITDA ($M) <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+        <input class="form-input" id="inp-ebitda-override" type="number" placeholder="e.g. 500 (auto-filled from ticker)">
+      </div>
+    </div>
+
+    <button class="btn-run" onclick="runModel()">Run Model →</button>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main-panel">
+
+    <div class="results-empty" id="results-empty">
+      <div class="results-empty-icon">📊</div>
+      <p>Enter a ticker or EBITDA override,<br>set your deal parameters, and run the model.</p>
+    </div>
+
+    <div id="results" hidden>
+
+      <div class="results-header">
+        <span class="results-company" id="res-company">Company Name</span>
+        <span class="results-ticker" id="res-ticker">TICK</span>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi-card highlight-gold">
+          <div class="kpi-label">MOIC</div>
+          <div class="kpi-value" id="kpi-moic">—</div>
+          <div class="kpi-sub">Return on equity</div>
+        </div>
+        <div class="kpi-card highlight-green">
+          <div class="kpi-label">IRR</div>
+          <div class="kpi-value" id="kpi-irr">—</div>
+          <div class="kpi-sub">Annualized return</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Entry EV</div>
+          <div class="kpi-value" id="kpi-ev">—</div>
+          <div class="kpi-sub">Enterprise value</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Equity Check</div>
+          <div class="kpi-value" id="kpi-equity">—</div>
+          <div class="kpi-sub">Initial investment</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Exit EV</div>
+          <div class="kpi-value" id="kpi-exit-ev">—</div>
+          <div class="kpi-sub">At exit</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Equity at Exit</div>
+          <div class="kpi-value" id="kpi-exit-eq">—</div>
+          <div class="kpi-sub">Proceeds</div>
+        </div>
+      </div>
+
+      <!-- Scenario comparison -->
+      <div class="panel" id="scenario-compare-panel" hidden>
+        <div class="panel-head" id="scenario-compare-head">Scenario Assumptions</div>
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table" id="scenario-compare-table"></table>
+        </div>
+      </div>
+
+      <!-- Capital structure -->
+      <div class="panel">
+        <div class="panel-head">Capital Structure</div>
+        <div class="panel-body">
+          <div class="stack-bar" id="stack-bar">
+            <div class="stack-seg seg-senior" id="seg-senior" style="flex:0.63">SENIOR</div>
+            <div class="stack-seg seg-mezz" id="seg-mezz" style="flex:0.27">MEZZ</div>
+            <div class="stack-seg seg-equity" id="seg-equity" style="flex:0.10">EQ</div>
+          </div>
+          <div class="stack-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#3A3A3A"></div>Senior Debt</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#888"></div>Mezzanine</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Equity</div>
+          </div>
+          <div style="margin-top:14px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tranche</th>
+                  <th>Amount ($M)</th>
+                  <th>% of EV</th>
+                  <th>Rate</th>
+                </tr>
+              </thead>
+              <tbody id="cap-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sources & Uses -->
+      <div class="panel">
+        <div class="panel-head">Sources &amp; Uses</div>
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table" id="sources-uses-table">
+            <thead><tr><th>Sources</th><th>Amount ($M)</th><th>% of Total</th><th>Uses</th><th>Amount ($M)</th><th>% of Total</th></tr></thead>
+            <tbody id="su-body"></tbody>
+            <tfoot id="su-foot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Year-by-year -->
+      <div class="panel">
+        <div class="panel-head">Year-by-Year Model</div>
+        <div class="panel-body" style="padding:0;">
+          <div style="overflow-x:auto;">
+            <table class="data-table" id="yearly-table">
+              <thead>
+                <tr id="yearly-head"></tr>
+              </thead>
+              <tbody id="yearly-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Model checks -->
+      <div class="panel">
+        <div class="panel-head">Model Checks</div>
+        <div class="panel-body">
+          <div id="checks-summary" class="checks-summary"></div>
+          <div class="checks-grid" id="checks-grid"></div>
+        </div>
+      </div>
+
+      <!-- FCF Bridge -->
+      <div class="panel">
+        <div class="panel-head">FCF Bridge — Year 1</div>
+        <div class="panel-body" id="fcf-bridge"></div>
+      </div>
+
+      <!-- Return Attribution -->
+      <div class="panel">
+        <div class="panel-head">Return Attribution</div>
+        <div class="panel-body" id="return-attr"></div>
+      </div>
+
+      <!-- Sensitivity -->
+      <div class="panel">
+        <div class="panel-head">Sensitivity Analysis</div>
+        <div class="panel-body">
+          <div class="sens-wrapper">
+            <div>
+              <div class="sens-axis-label">MOIC — Exit Multiple vs EBITDA Growth</div>
+              <div class="sensitivity-grid" id="sens-moic"></div>
+            </div>
+            <div>
+              <div class="sens-axis-label">IRR — Exit Multiple vs EBITDA Growth</div>
+              <div class="sensitivity-grid" id="sens-irr"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="disclaimer" id="data-disclaimer"></div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// ─── built-in company database (revenue, EBITDA, mktcap all in $M) ──────────
+// Data: trailing twelve months, approximate as of mid-2025
+const CO_DB = [
+  {sym:'AAPL',  name:'Apple Inc.',               rev:391000, ebitda:134000, mktcap:3200000, price:213},
+  {sym:'MSFT',  name:'Microsoft Corp.',           rev:245000, ebitda:113000, mktcap:3100000, price:417},
+  {sym:'GOOGL', name:'Alphabet Inc.',             rev:350000, ebitda:115000, mktcap:2200000, price:179},
+  {sym:'AMZN',  name:'Amazon.com Inc.',           rev:638000, ebitda:105000, mktcap:2200000, price:209},
+  {sym:'META',  name:'Meta Platforms Inc.',       rev:165000, ebitda:78000,  mktcap:1500000, price:590},
+  {sym:'NVDA',  name:'NVIDIA Corp.',              rev:130000, ebitda:82000,  mktcap:3300000, price:135},
+  {sym:'TSLA',  name:'Tesla Inc.',                rev:100000, ebitda:10000,  mktcap:800000,  price:250},
+  {sym:'BRK.B', name:'Berkshire Hathaway',        rev:370000, ebitda:52000,  mktcap:1000000, price:460},
+  {sym:'JPM',   name:'JPMorgan Chase & Co.',      rev:174000, ebitda:58000,  mktcap:700000,  price:235},
+  {sym:'V',     name:'Visa Inc.',                 rev:35000,  ebitda:22000,  mktcap:600000,  price:295},
+  {sym:'MA',    name:'Mastercard Inc.',           rev:28000,  ebitda:17000,  mktcap:475000,  price:505},
+  {sym:'UNH',   name:'UnitedHealth Group',        rev:400000, ebitda:24000,  mktcap:470000,  price:500},
+  {sym:'JNJ',   name:'Johnson & Johnson',         rev:88000,  ebitda:26000,  mktcap:400000,  price:165},
+  {sym:'WMT',   name:'Walmart Inc.',              rev:680000, ebitda:36000,  mktcap:750000,  price:93},
+  {sym:'PG',    name:'Procter & Gamble Co.',      rev:84000,  ebitda:20000,  mktcap:400000,  price:168},
+  {sym:'KO',    name:'Coca-Cola Co.',             rev:46000,  ebitda:13000,  mktcap:280000,  price:65},
+  {sym:'PEP',   name:'PepsiCo Inc.',              rev:92000,  ebitda:17000,  mktcap:210000,  price:153},
+  {sym:'COST',  name:'Costco Wholesale Corp.',    rev:240000, ebitda:9500,   mktcap:380000,  price:856},
+  {sym:'ABBV',  name:'AbbVie Inc.',               rev:56000,  ebitda:19000,  mktcap:340000,  price:196},
+  {sym:'MRK',   name:'Merck & Co.',               rev:63000,  ebitda:19000,  mktcap:265000,  price:104},
+  {sym:'LLY',   name:'Eli Lilly and Co.',         rev:45000,  ebitda:14000,  mktcap:700000,  price:770},
+  {sym:'AMD',   name:'Advanced Micro Devices',    rev:26000,  ebitda:5500,   mktcap:240000,  price:148},
+  {sym:'INTC',  name:'Intel Corp.',               rev:54000,  ebitda:8000,   mktcap:110000,  price:26},
+  {sym:'CRM',   name:'Salesforce Inc.',           rev:35000,  ebitda:8500,   mktcap:260000,  price:266},
+  {sym:'ORCL',  name:'Oracle Corp.',              rev:55000,  ebitda:20000,  mktcap:400000,  price:148},
+  {sym:'ADBE',  name:'Adobe Inc.',                rev:21000,  ebitda:7500,   mktcap:200000,  price:445},
+  {sym:'NOW',   name:'ServiceNow Inc.',           rev:11000,  ebitda:3000,   mktcap:195000,  price:945},
+  {sym:'UBER',  name:'Uber Technologies',         rev:43000,  ebitda:5000,   mktcap:150000,  price:72},
+  {sym:'ABNB',  name:'Airbnb Inc.',               rev:11000,  ebitda:3200,   mktcap:80000,   price:126},
+  {sym:'SPOT',  name:'Spotify Technology',        rev:16000,  ebitda:1800,   mktcap:80000,   price:395},
+  {sym:'SNAP',  name:'Snap Inc.',                 rev:5300,   ebitda:200,    mktcap:17000,   price:11},
+  {sym:'PINS',  name:'Pinterest Inc.',            rev:3700,   ebitda:900,    mktcap:24000,   price:34},
+  {sym:'RBLX',  name:'Roblox Corp.',              rev:4000,   ebitda:-800,   mktcap:30000,   price:49},
+  {sym:'BA',    name:'Boeing Co.',                rev:78000,  ebitda:2000,   mktcap:120000,  price:195},
+  {sym:'CAT',   name:'Caterpillar Inc.',          rev:64000,  ebitda:14000,  mktcap:195000,  price:395},
+  {sym:'DE',    name:'Deere & Company',           rev:61000,  ebitda:12000,  mktcap:130000,  price:430},
+  {sym:'GE',    name:'GE Aerospace',              rev:35000,  ebitda:6500,   mktcap:175000,  price:160},
+  {sym:'HON',   name:'Honeywell International',   rev:37000,  ebitda:8000,   mktcap:130000,  price:195},
+  {sym:'XOM',   name:'Exxon Mobil Corp.',         rev:400000, ebitda:55000,  mktcap:500000,  price:116},
+  {sym:'CVX',   name:'Chevron Corp.',             rev:200000, ebitda:32000,  mktcap:260000,  price:145},
+  {sym:'NEE',   name:'NextEra Energy Inc.',       rev:24000,  ebitda:9500,   mktcap:145000,  price:73},
+  {sym:'DIS',   name:'Walt Disney Co.',           rev:91000,  ebitda:16000,  mktcap:190000,  price:103},
+  {sym:'NFLX',  name:'Netflix Inc.',              rev:39000,  ebitda:9000,   mktcap:340000,  price:790},
+  {sym:'T',     name:'AT&T Inc.',                 rev:122000, ebitda:42000,  mktcap:160000,  price:22},
+  {sym:'VZ',    name:'Verizon Communications',    rev:134000, ebitda:48000,  mktcap:170000,  price:41},
+  {sym:'BAC',   name:'Bank of America Corp.',     rev:98000,  ebitda:32000,  mktcap:330000,  price:42},
+  {sym:'WFC',   name:'Wells Fargo & Co.',         rev:82000,  ebitda:26000,  mktcap:230000,  price:65},
+  {sym:'GS',    name:'Goldman Sachs Group',       rev:48000,  ebitda:16000,  mktcap:175000,  price:498},
+  {sym:'MS',    name:'Morgan Stanley',            rev:58000,  ebitda:15000,  mktcap:195000,  price:112},
+  {sym:'BLK',   name:'BlackRock Inc.',            rev:20000,  ebitda:7500,   mktcap:145000,  price:950},
+  {sym:'SPGI',  name:'S&P Global Inc.',           rev:14000,  ebitda:6000,   mktcap:150000,  price:495},
+  {sym:'MCO',   name:"Moody's Corp.",             rev:7000,   ebitda:3000,   mktcap:80000,   price:430},
+  {sym:'ICE',   name:'Intercontinental Exchange', rev:9500,   ebitda:4200,   mktcap:86000,   price:157},
+  {sym:'CME',   name:'CME Group Inc.',            rev:6200,   ebitda:3800,   mktcap:80000,   price:220},
+  {sym:'AXP',   name:'American Express Co.',      rev:67000,  ebitda:12000,  mktcap:200000,  price:270},
+  {sym:'PYPL',  name:'PayPal Holdings Inc.',      rev:31000,  ebitda:5500,   mktcap:80000,   price:73},
+  {sym:'SQ',    name:'Block Inc.',                rev:24000,  ebitda:1200,   mktcap:40000,   price:65},
+  {sym:'COIN',  name:'Coinbase Global Inc.',      rev:6200,   ebitda:2000,   mktcap:55000,   price:218},
+  {sym:'AFRM',  name:'Affirm Holdings Inc.',      rev:2700,   ebitda:200,    mktcap:17000,   price:49},
+  {sym:'HD',    name:'Home Depot Inc.',           rev:158000, ebitda:22000,  mktcap:370000,  price:370},
+  {sym:'LOW',   name:"Lowe's Companies Inc.",     rev:89000,  ebitda:13000,  mktcap:140000,  price:232},
+  {sym:'NKE',   name:'Nike Inc.',                 rev:51000,  ebitda:5800,   mktcap:115000,  price:76},
+  {sym:'SBUX',  name:'Starbucks Corp.',           rev:36000,  ebitda:5500,   mktcap:100000,  price:88},
+  {sym:'MCD',   name:"McDonald's Corp.",          rev:25000,  ebitda:12000,  mktcap:195000,  price:274},
+  {sym:'YUM',   name:'Yum! Brands Inc.',          rev:7400,   ebitda:2200,   mktcap:36000,   price:136},
+  {sym:'CMG',   name:'Chipotle Mexican Grill',    rev:11000,  ebitda:2000,   mktcap:87000,   price:56},
+  {sym:'ZM',    name:'Zoom Video Communications', rev:4700,   ebitda:1500,   mktcap:19000,   price:66},
+  {sym:'DDOG',  name:'Datadog Inc.',              rev:2700,   ebitda:550,    mktcap:42000,   price:130},
+  {sym:'SNOW',  name:'Snowflake Inc.',            rev:3600,   ebitda:400,    mktcap:50000,   price:162},
+  {sym:'PLTR',  name:'Palantir Technologies',     rev:2900,   ebitda:650,    mktcap:200000,  price:87},
+  {sym:'PATH',  name:'UiPath Inc.',               rev:1500,   ebitda:150,    mktcap:12000,   price:19},
+  {sym:'MDB',   name:'MongoDB Inc.',              rev:2000,   ebitda:200,    mktcap:23000,   price:320},
+  {sym:'NET',   name:'Cloudflare Inc.',           rev:1700,   ebitda:220,    mktcap:40000,   price:122},
+  {sym:'OKTA',  name:'Okta Inc.',                 rev:2500,   ebitda:300,    mktcap:17000,   price:107},
+  {sym:'ZS',    name:'Zscaler Inc.',              rev:2400,   ebitda:450,    mktcap:30000,   price:196},
+  {sym:'CRWD',  name:'CrowdStrike Holdings',      rev:3900,   ebitda:750,    mktcap:80000,   price:330},
+  {sym:'S',     name:'SentinelOne Inc.',          rev:800,    ebitda:-100,   mktcap:15000,   price:22},
+  {sym:'WDAY',  name:'Workday Inc.',              rev:8400,   ebitda:1700,   mktcap:65000,   price:244},
+  {sym:'TEAM',  name:'Atlassian Corp.',           rev:4600,   ebitda:800,    mktcap:45000,   price:183},
+  {sym:'HUB',   name:'HubSpot Inc.',              rev:2600,   ebitda:400,    mktcap:28000,   price:539},
+  {sym:'TWLO',  name:'Twilio Inc.',               rev:4300,   ebitda:600,    mktcap:12000,   price:60},
+  {sym:'SHOP',  name:'Shopify Inc.',              rev:8900,   ebitda:1200,   mktcap:125000,  price:100},
+  {sym:'SQ2',   name:'Block Inc. (SQ)',           rev:24000,  ebitda:1200,   mktcap:40000,   price:65},
+  {sym:'LYFT',  name:'Lyft Inc.',                 rev:5700,   ebitda:400,    mktcap:6000,    price:14},
+  {sym:'DASH',  name:'DoorDash Inc.',             rev:9900,   ebitda:700,    mktcap:60000,   price:145},
+  {sym:'ABNB',  name:'Airbnb Inc.',               rev:11000,  ebitda:3200,   mktcap:80000,   price:126},
+  // Private equity / deal benchmarks
+  {sym:'KKR-STEADFAST', name:'KKR × Steadfast (Rookonomy Deal)', rev:4200, ebitda:620, mktcap:null, price:null},
+  {sym:'TB-DAYFORCE',   name:'Thoma Bravo × Dayforce (Rookonomy Deal)', rev:1100, ebitda:180, mktcap:null, price:null},
+].reduce((acc, c) => { acc[c.sym] = c; return acc; }, {});
+
+const CO_LIST = Object.values(CO_DB);
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+// All monetary values are in $M throughout the model.
+// fmtM()  → always shows $M (for tables, e.g. "147,420.0")
+// fmtB()  → always shows $B (for KPI cards)
+// fmtAuto() → B if ≥1,000M, else M (for compact displays)
+function fmtM(nM, decimals=1) {
+  if (nM == null || isNaN(nM)) return '—';
+  return '$' + nM.toLocaleString('en-US', {minimumFractionDigits:decimals, maximumFractionDigits:decimals}) + 'M';
+}
+function fmtB(nM, decimals=2) {
+  if (nM == null || isNaN(nM)) return '—';
+  return '$' + (nM/1000).toFixed(decimals) + 'B';
+}
+function fmtAuto(nM, decimals=1) {
+  if (nM == null || isNaN(nM)) return '—';
+  if (Math.abs(nM) >= 1000) return fmtB(nM, 2);
+  return fmtM(nM, decimals);
+}
+function fmtPct(n) { return (n*100).toFixed(1)+'%'; }
+function fmtX(n)   { return n.toFixed(2)+'x'; }
+
+function updateLabel(sliderId, labelId, suffix) {
+  const val = parseFloat(document.getElementById(sliderId).value);
+  document.getElementById(labelId).textContent = val.toFixed(suffix==='x'?1:suffix===' yrs'?0:1)+suffix;
+}
+
+// ─── ticker autocomplete ─────────────────────────────────────────────────────
+let suggestActive = -1;
+function onTickerInput() {
+  const q = document.getElementById('ticker').value.trim().toUpperCase();
+  const box = document.getElementById('ticker-suggest');
+  if (!q) { box.hidden = true; return; }
+  const hits = CO_LIST.filter(c =>
+    c.sym.includes(q) || c.name.toUpperCase().includes(q)
+  ).slice(0, 8);
+  if (!hits.length) { box.hidden = true; return; }
+  box.innerHTML = hits.map((c,i) =>
+    `<div class="ticker-suggest-item" data-sym="${c.sym}" onmousedown="chooseTicker('${c.sym}')">
+      <span class="ticker-suggest-sym">${c.sym}</span>
+      <span class="ticker-suggest-name">${c.name}</span>
+    </div>`
+  ).join('');
+  suggestActive = -1;
+  box.hidden = false;
+}
+
+function onTickerKey(e) {
+  const box = document.getElementById('ticker-suggest');
+  const items = box.querySelectorAll('.ticker-suggest-item');
+  if (e.key === 'ArrowDown') {
+    suggestActive = Math.min(suggestActive+1, items.length-1);
+    items.forEach((el,i) => el.style.background = i===suggestActive ? 'var(--surface-2)' : '');
+    e.preventDefault();
+  } else if (e.key === 'ArrowUp') {
+    suggestActive = Math.max(suggestActive-1, 0);
+    items.forEach((el,i) => el.style.background = i===suggestActive ? 'var(--surface-2)' : '');
+    e.preventDefault();
+  } else if (e.key === 'Enter') {
+    if (suggestActive >= 0 && items[suggestActive]) {
+      chooseTicker(items[suggestActive].dataset.sym);
+    } else {
+      selectTicker();
+    }
+  } else if (e.key === 'Escape') {
+    box.hidden = true;
+  }
+}
+
+function chooseTicker(sym) {
+  document.getElementById('ticker').value = sym;
+  document.getElementById('ticker-suggest').hidden = true;
+  selectTicker(sym);
+}
+
+function selectTicker(sym) {
+  sym = sym || document.getElementById('ticker').value.trim().toUpperCase();
+  const co = CO_DB[sym];
+  const msg = document.getElementById('status-msg');
+  if (!co) {
+    msg.textContent = `${sym} not in database. Enter EBITDA ($M) below to model it manually.`;
+    msg.className = 'status-bar info';
+    msg.hidden = false;
+    window._fetchedName = sym;
+    window._fetchedEBITDA = null;
+    document.getElementById('company-card').classList.remove('visible');
+    return;
+  }
+  msg.hidden = true;
+  // Company name + demo badge
+  document.getElementById('co-name').innerHTML =
+    co.name + ' <span style="font-size:10px;font-weight:600;background:var(--gold-light);color:var(--gold);border:1px solid var(--gold);border-radius:3px;padding:1px 6px;letter-spacing:0.05em;vertical-align:middle;">DEMO DATA</span>';
+  document.getElementById('co-price').textContent  = co.price ? '$'+co.price.toFixed(2) : 'Private';
+  document.getElementById('co-mktcap').textContent = co.mktcap ? fmtB(co.mktcap, 1) : 'Private';
+  document.getElementById('co-rev').textContent    = co.rev    ? fmtB(co.rev, 1) : '—';
+  document.getElementById('co-ebitda').textContent = co.ebitda ? fmtB(co.ebitda, 1) : '—';
+  if (co.ebitda) {
+    document.getElementById('inp-ebitda-override').value = co.ebitda;
+    window._fetchedEBITDA = co.ebitda;
+  }
+  document.getElementById('company-card').classList.add('visible');
+  window._fetchedTicker = sym;
+  window._fetchedName = co.name;
+}
+
+// Close suggest on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ticker-wrap')) {
+    document.getElementById('ticker-suggest').hidden = true;
+  }
+});
+
+// ─── core LBO math ──────────────────────────────────────────────────────────
+function runModel() {
+  // Read inputs
+  const entryMult  = parseFloat(document.getElementById('sl-entry').value);
+  const leverageMult = parseFloat(document.getElementById('sl-lev').value);
+  const seniorPct  = parseFloat(document.getElementById('inp-senior-pct').value)/100;
+  const mezzPct    = parseFloat(document.getElementById('inp-mezz-pct').value)/100;
+  const seniorRate = parseFloat(document.getElementById('inp-senior-rate').value)/100;
+  const mezzRate   = parseFloat(document.getElementById('inp-mezz-rate').value)/100;
+  const growthRate = parseFloat(document.getElementById('sl-growth').value)/100;
+  const holdYrs    = parseInt(document.getElementById('sl-hold').value);
+  const exitMult   = parseFloat(document.getElementById('sl-exit').value);
+
+  const ebitdaOverride = parseFloat(document.getElementById('inp-ebitda-override').value);
+  let ebitda0 = isNaN(ebitdaOverride) ? window._fetchedEBITDA : ebitdaOverride;
+  if (!ebitda0) {
+    const msg = document.getElementById('status-msg');
+    msg.textContent = 'Enter an EBITDA ($M) or fetch a ticker first.';
+    msg.className = 'status-bar error';
+    msg.hidden = false;
+    return;
+  }
+  document.getElementById('status-msg').hidden = true;
+
+  const ticker = document.getElementById('ticker').value.trim().toUpperCase() || 'MANUAL';
+  const name   = window._fetchedName || ticker;
+
+  // Entry
+  const entryEV   = ebitda0 * entryMult;
+  const totalDebt = leverageMult * ebitda0;
+  const seniorDebt = totalDebt * seniorPct;
+  const mezzDebt  = totalDebt * mezzPct;
+  const equityIn  = entryEV - totalDebt;
+
+  // Year-by-year
+  const rows = [];
+  let remSenior = seniorDebt;
+  let remMezz   = mezzDebt;
+  let ebitda    = ebitda0;
+
+  for (let yr = 1; yr <= holdYrs; yr++) {
+    ebitda = ebitda0 * Math.pow(1+growthRate, yr);
+    const fcf = ebitda * 0.50; // ~50% EBITDA conversion
+    // Senior: pay interest, then amortize remainder
+    const seniorInt   = remSenior * seniorRate;
+    const seniorAmort = Math.min(Math.max(fcf - seniorInt, 0), remSenior);
+    remSenior = Math.max(remSenior - seniorAmort, 0);
+    // Mezz: PIK accrues
+    remMezz = remMezz * (1 + mezzRate);
+    rows.push({ yr, ebitda, fcf, seniorInt, seniorAmort, seniorBal: remSenior, mezzBal: remMezz });
+  }
+
+  // Exit
+  const exitEBITDA = ebitda;
+  const exitEV     = exitEBITDA * exitMult;
+  const totalDebtAtExit = remSenior + remMezz;
+  const exitEquity = Math.max(exitEV - totalDebtAtExit, 0);
+  const moic = equityIn > 0 ? exitEquity / equityIn : 0;
+  const irr  = moic > 0 ? Math.pow(moic, 1/holdYrs) - 1 : -1;
+
+  // ─── render ────────────────────────────────────────────────────────────────
+  document.getElementById('results-empty').hidden = true;
+  document.getElementById('results').hidden = false;
+
+  document.getElementById('res-company').textContent = name;
+  document.getElementById('res-ticker').textContent = ticker;
+
+  document.getElementById('kpi-moic').textContent = fmtX(moic);
+  document.getElementById('kpi-irr').textContent  = fmtPct(irr);
+  document.getElementById('kpi-ev').textContent   = fmtAuto(entryEV);
+  document.getElementById('kpi-equity').textContent = fmtAuto(equityIn);
+  document.getElementById('kpi-exit-ev').textContent = fmtAuto(exitEV);
+  document.getElementById('kpi-exit-eq').textContent = fmtAuto(exitEquity);
+
+  // Color IRR card
+  const irrCard = document.getElementById('kpi-irr').closest('.kpi-card');
+  irrCard.className = 'kpi-card';
+  if (irr >= 0.20) irrCard.classList.add('highlight-green');
+  else if (irr >= 0.12) irrCard.classList.add('highlight-gold');
+  // moic
+  const moicCard = document.getElementById('kpi-moic').closest('.kpi-card');
+  moicCard.className = 'kpi-card';
+  if (moic >= 2.5) moicCard.classList.add('highlight-green');
+  else if (moic >= 1.5) moicCard.classList.add('highlight-gold');
+
+  // Capital stack bar
+  const evTotal = entryEV;
+  document.getElementById('seg-senior').style.flex = seniorDebt/evTotal;
+  document.getElementById('seg-mezz').style.flex   = mezzDebt/evTotal;
+  document.getElementById('seg-equity').style.flex = equityIn/evTotal;
+  document.getElementById('seg-senior').textContent = seniorDebt/evTotal > 0.1 ? 'SENIOR' : '';
+  document.getElementById('seg-mezz').textContent   = mezzDebt/evTotal > 0.07 ? 'MEZZ' : '';
+  document.getElementById('seg-equity').textContent = equityIn/evTotal > 0.06 ? 'EQ' : '';
+
+  // Cap table
+  const capBody = document.getElementById('cap-table-body');
+  capBody.innerHTML = `
+    <tr><td>Senior Debt</td><td>${fmtM(seniorDebt)}</td><td>${fmtPct(seniorDebt/entryEV)}</td><td>${(seniorRate*100).toFixed(2)}%</td></tr>
+    <tr><td>Mezzanine (PIK)</td><td>${fmtM(mezzDebt)}</td><td>${fmtPct(mezzDebt/entryEV)}</td><td>${(mezzRate*100).toFixed(2)}%</td></tr>
+    <tr><td>Equity</td><td>${fmtM(equityIn)}</td><td>${fmtPct(equityIn/entryEV)}</td><td>—</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>${fmtM(entryEV)}</strong></td><td>100.0%</td><td>—</td></tr>
+  `;
+
+  // Sources & Uses
+  const txnFees   = entryEV * 0.02; // ~2% transaction fees
+  const finFees   = totalDebt * 0.01; // ~1% financing fees
+  const minCash   = ebitda0 * 0.1;   // ~10% EBITDA minimum cash
+  const totalUses = entryEV + txnFees + finFees + minCash;
+  const sponsorEq = totalUses - seniorDebt - mezzDebt; // equity plugs the gap
+
+  const suRows = [
+    ['Senior Debt',     seniorDebt, 'Equity Purchase',     entryEV    ],
+    ['Mezzanine (PIK)', mezzDebt,   'Transaction Fees',    txnFees    ],
+    ['Sponsor Equity',  sponsorEq,  'Financing Fees',      finFees    ],
+    ['',                null,        'Min. Cash to B/S',   minCash    ],
+  ];
+  const suBody = document.getElementById('su-body');
+  suBody.innerHTML = suRows.map(([src, sAmt, use, uAmt]) =>
+    `<tr>
+      <td>${src}</td>
+      <td>${sAmt != null ? fmtM(sAmt) : ''}</td>
+      <td>${sAmt != null ? fmtPct(sAmt/totalUses) : ''}</td>
+      <td>${use}</td>
+      <td>${fmtM(uAmt)}</td>
+      <td>${fmtPct(uAmt/totalUses)}</td>
+    </tr>`
+  ).join('');
+  document.getElementById('su-foot').innerHTML = `<tr>
+    <td><strong>Total Sources</strong></td><td><strong>${fmtM(totalUses)}</strong></td><td>100.0%</td>
+    <td><strong>Total Uses</strong></td><td><strong>${fmtM(totalUses)}</strong></td><td>100.0%</td>
+  </tr>`;
+
+  // Yearly table
+  const head = document.getElementById('yearly-head');
+  const body = document.getElementById('yearly-body');
+  head.innerHTML = '<th>Metric ($ millions)</th>' + rows.map(r=>`<th>Year ${r.yr}</th>`).join('');
+  const metrics = [
+    ['EBITDA',          r => fmtM(r.ebitda)],
+    ['FCF',             r => fmtM(r.fcf)],
+    ['Senior Interest', r => fmtM(r.seniorInt)],
+    ['Senior Amort',    r => fmtM(r.seniorAmort)],
+    ['Senior Balance',  r => fmtM(r.seniorBal)],
+    ['Mezz Balance',    r => fmtM(r.mezzBal)],
+  ];
+  body.innerHTML = metrics.map(([label, fn]) =>
+    `<tr><td>${label}</td>${rows.map(r=>`<td>${fn(r)}</td>`).join('')}</tr>`
+  ).join('');
+
+  // Sensitivity
+  const exitMults  = [entryMult-2, entryMult, entryMult+2];
+  const growthRates = [growthRate-0.05, growthRate, growthRate+0.05];
+  function sensitivityCalc(gRate, exMult) {
+    let ebi = ebitda0;
+    let rs = seniorDebt, rm = mezzDebt;
+    for (let yr=1; yr<=holdYrs; yr++) {
+      ebi = ebitda0 * Math.pow(1+gRate, yr);
+      const fcf2 = ebi * 0.50;
+      const si = rs * seniorRate;
+      const sa = Math.min(Math.max(fcf2-si,0), rs);
+      rs = Math.max(rs-sa, 0);
+      rm = rm*(1+mezzRate);
+    }
+    const exEBITDA = ebi;
+    const exEV2 = exEBITDA * exMult;
+    const exEq2 = Math.max(exEV2 - rs - rm, 0);
+    const m = equityIn > 0 ? exEq2/equityIn : 0;
+    const i = m > 0 ? Math.pow(m,1/holdYrs)-1 : -1;
+    return { moic: m, irr: i };
+  }
+
+  function sensCell(val, type) {
+    let cls='';
+    if (type==='moic') { if(val>=2.5) cls='sens-cell-high'; else if(val>=1.5) cls='sens-cell-mid'; else cls='sens-cell-low'; }
+    else { if(val>=0.20) cls='sens-cell-high'; else if(val>=0.12) cls='sens-cell-mid'; else cls='sens-cell-low'; }
+    return cls;
+  }
+
+  function buildSensTable(type) {
+    let html = `<table class="sens-table"><thead><tr><th>Exit/Growth</th>`;
+    growthRates.forEach(g => { html += `<th>${(g*100).toFixed(1)}%g</th>`; });
+    html += '</tr></thead><tbody>';
+    exitMults.forEach(ex => {
+      html += `<tr><th>${ex.toFixed(1)}x</th>`;
+      growthRates.forEach(g => {
+        const res = sensitivityCalc(g, ex);
+        const val = type==='moic' ? res.moic : res.irr;
+        const label = type==='moic' ? fmtX(val) : fmtPct(val);
+        html += `<td class="${sensCell(val,type)}">${label}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  document.getElementById('sens-moic').innerHTML = buildSensTable('moic');
+  document.getElementById('sens-irr').innerHTML  = buildSensTable('irr');
+
+  // ─── model checks ────────────────────────────────────────────────────────
+  const HURDLE = 0.20;
+  const yr1 = rows[0];
+  const interestCoverage = yr1 ? yr1.ebitda / (yr1.seniorInt + yr1.mezzBal * mezzRate) : 0;
+  const exitDebtEBITDA = exitEBITDA > 0 ? totalDebtAtExit / exitEBITDA : 999;
+
+  const checks = [
+    { label: 'Sources = Uses',            pass: Math.abs(entryEV - (seniorDebt + mezzDebt + equityIn)) < 0.01,  warn: false },
+    { label: 'Capital structure = 100%',  pass: Math.abs((seniorDebt+mezzDebt+equityIn)/entryEV - 1) < 0.001,  warn: false },
+    { label: 'Equity check > 0',          pass: equityIn > 0,                                                   warn: false },
+    { label: 'Exit equity > 0',           pass: exitEquity > 0,                                                 warn: false },
+    { label: 'Senior balance ≥ 0',        pass: remSenior >= -0.01,                                             warn: false },
+    { label: `IRR ≥ hurdle (${(HURDLE*100).toFixed(0)}%)`, pass: irr >= HURDLE, warn: irr >= 0.12 && irr < HURDLE },
+    { label: 'MOIC ≥ 2.0x',               pass: moic >= 2.0,  warn: moic >= 1.5 && moic < 2.0 },
+    { label: 'Interest coverage > 2.0x',  pass: interestCoverage > 2.0, warn: interestCoverage > 1.2 && interestCoverage <= 2.0 },
+    { label: 'Exit debt/EBITDA < 4x',     pass: exitDebtEBITDA < 4,     warn: exitDebtEBITDA >= 4 && exitDebtEBITDA < 5 },
+    { label: 'Exit multiple ≤ entry + 2x',pass: exitMult <= entryMult + 2, warn: exitMult > entryMult && exitMult <= entryMult + 2 },
+    { label: 'EBITDA input provided',     pass: !!ebitda0 && ebitda0 > 0, warn: false },
+    { label: 'Hold period 3–7 years',     pass: holdYrs >= 3 && holdYrs <= 7, warn: holdYrs < 3 || holdYrs > 7 },
+  ];
+
+  const errs  = checks.filter(c => !c.pass && !c.warn);
+  const warns = checks.filter(c => !c.pass && c.warn);
+  const sumEl = document.getElementById('checks-summary');
+  if (errs.length === 0 && warns.length === 0) {
+    sumEl.className = 'checks-summary all-pass';
+    sumEl.textContent = '✓ All model checks passed';
+  } else if (errs.length === 0) {
+    sumEl.className = 'checks-summary has-warn';
+    sumEl.textContent = `⚠ ${warns.length} warning${warns.length>1?'s':''} — review assumptions`;
+  } else {
+    sumEl.className = 'checks-summary has-err';
+    sumEl.textContent = `✗ ${errs.length} check${errs.length>1?'s':''} failed`;
+  }
+
+  document.getElementById('checks-grid').innerHTML = checks.map(c => {
+    const cls = !c.pass && !c.warn ? 'check-err' : !c.pass && c.warn ? 'check-warn' : 'check-ok';
+    const dot = !c.pass && !c.warn ? '✗' : !c.pass && c.warn ? '⚠' : '✓';
+    return `<div class="check-item ${cls}"><span class="check-dot"></span>${c.label}</div>`;
+  }).join('');
+
+  // ─── FCF bridge (year 1) ─────────────────────────────────────────────────
+  if (yr1) {
+    const taxRate   = 0.25;
+    const capexPct  = 0.06; // capex ~6% of revenue (approx)
+    const nwcPct    = 0.01;
+    const da        = yr1.ebitda * 0.15; // D&A ~15% of EBITDA (rough)
+    const ebit      = yr1.ebitda - da;
+    const taxes     = Math.max(ebit - yr1.seniorInt, 0) * taxRate;
+    const capex     = yr1.ebitda * capexPct;
+    const nwc       = yr1.ebitda * nwcPct;
+    const unlevFCF  = yr1.ebitda - taxes - capex - nwc;
+    const cashAvail = unlevFCF - yr1.seniorInt;
+    const br = (label, val, indent=false, pos=null) => {
+      const isPos = pos !== null ? pos : val >= 0;
+      const valCls = val < 0 ? 'neg' : (pos === true ? 'pos' : '');
+      return `<div class="bridge-row">
+        <span class="bridge-label${indent?' indent':''}">${label}</span>
+        <span class="bridge-val ${valCls}">${val >= 0 ? '' : '('}${fmtM(Math.abs(val))}${val < 0 ? ')' : ''}</span>
+      </div>`;
+    };
+    document.getElementById('fcf-bridge').innerHTML =
+      br('EBITDA', yr1.ebitda, false, true) +
+      br('Less: D&A (est.)', -da, true) +
+      br('= EBIT', ebit) +
+      br('Less: Cash Taxes (est. 25%)', -taxes, true) +
+      br('Less: Capex (est. 6% EBITDA)', -capex, true) +
+      br('Less: Working Capital', -nwc, true) +
+      `<div class="bridge-row subtotal"><span class="bridge-label"><strong>Unlevered FCF</strong></span><span class="bridge-val">${fmtM(unlevFCF)}</span></div>` +
+      br('Less: Senior Interest', -yr1.seniorInt, true) +
+      `<div class="bridge-row"><span class="bridge-label"><strong>Cash Available for Debt Paydown</strong></span><span class="bridge-val ${cashAvail>=0?'pos':'neg'}">${cashAvail>=0?'':('(') }${fmtM(Math.abs(cashAvail))}${cashAvail<0?')':''}</span></div>` +
+      `<div style="margin-top:10px;font-size:11px;color:var(--text-3);">D&A and tax are estimates. Actual figures require full financial statements. Interest coverage: <strong>${interestCoverage.toFixed(1)}x</strong></div>`;
+  }
+
+  // ─── return attribution ──────────────────────────────────────────────────
+  // Return attribution: decompose MOIC into 3 drivers
+  // 1. EBITDA growth contribution: if EBITDA hadn't grown, exit EV at same exit multiple
+  const exitEVNoGrowth = ebitda0 * exitMult;
+  const exitEqNoGrowth = Math.max(exitEVNoGrowth - totalDebtAtExit, 0);
+  const moicNoGrowth   = equityIn > 0 ? exitEqNoGrowth / equityIn : 0;
+  const ebitdaContrib  = moicNoGrowth; // base MOIC without growth
+  const growthContrib  = moic - moicNoGrowth; // incremental from EBITDA growth
+
+  // 2. Debt paydown contribution: if no debt had been paid down, same exit EBITDA
+  const exitEqNoPaydown = Math.max(exitEV - totalDebt, 0); // no amortization
+  const moicNoPaydown   = equityIn > 0 ? exitEqNoPaydown / equityIn : 0;
+  const paydownContrib  = moic - moicNoPaydown;
+
+  // 3. Multiple expansion/contraction contribution
+  const exitEVAtEntry  = exitEBITDA * entryMult;
+  const exitEqAtEntry  = Math.max(exitEVAtEntry - totalDebtAtExit, 0);
+  const moicAtEntry    = equityIn > 0 ? exitEqAtEntry / equityIn : 0;
+  const multContrib    = moic - moicAtEntry;
+
+  // Simplified attribution bar
+  const attrEl = document.getElementById('return-attr');
+  const baseReturn = 1.0; // cost of equity invested
+  attrEl.innerHTML = `
+    <div style="margin-bottom:12px;font-size:12px;color:var(--text-2);">
+      Total MOIC of <strong>${fmtX(moic)}</strong> driven by three factors:
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+      <div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:var(--radius);padding:12px;text-align:center;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:4px;">EBITDA Growth</div>
+        <div style="font-family:var(--mono);font-size:20px;color:var(--gold);">${growthContrib>=0?'+':''}${growthContrib.toFixed(2)}x</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px;">Operating performance</div>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:4px;">Debt Paydown</div>
+        <div style="font-family:var(--mono);font-size:20px;color:var(--text);">${paydownContrib>=0?'+':''}${paydownContrib.toFixed(2)}x</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px;">Senior amortisation</div>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:4px;">Multiple Δ</div>
+        <div style="font-family:var(--mono);font-size:20px;color:${multContrib>=0?'var(--green)':'var(--red)'};">${multContrib>=0?'+':''}${multContrib.toFixed(2)}x</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${exitMult>entryMult?'Expansion':'Compression'} (${entryMult}x→${exitMult}x)</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-3);line-height:1.5;">
+      Attribution is illustrative. Values show each driver's contribution to the ${fmtX(moic)} MOIC in isolation. Components may not sum exactly due to interaction effects between drivers.
+    </div>
+  `;
+
+  // ─── disclaimer ─────────────────────────────────────────────────────────
+  const co = CO_DB[window._fetchedTicker || ''];
+  const isPrivate = window._fetchedTicker && (window._fetchedTicker.includes('-'));
+  const coSrc = co ? `Data source: Rookonomy internal database · Approximate TTM figures as of mid-2025 · ${co.mktcap ? 'USD' : 'Figures user-entered'} · EBITDA may be adjusted.` : 'EBITDA entered manually by user.';
+  document.getElementById('data-disclaimer').innerHTML =
+    `⚠ Illustrative model only. ${coSrc} This tool is for educational purposes — not investment advice. Assumptions (FCF conversion, D&A, taxes, capex) are simplified estimates. Always verify against audited financials.<br>
+    <span style="display:inline-block;margin-top:6px;font-size:10px;letter-spacing:0.06em;">Model version: v2.0 &nbsp;·&nbsp; Last updated: Sep 2025 &nbsp;·&nbsp; Rookonomy LBO Underwriting Engine</span>`;
+}
+
+// ─── scenarios ───────────────────────────────────────────────────────────────
+const SCENARIOS = {
+  base:   { label:'Base Case',     growth:8,  entry:10, exit:10, lev:4.5, desc:'8% EBITDA growth · 10x entry & exit · 4.5x leverage' },
+  up:     { label:'Upside',        growth:13, entry:10, exit:12, lev:4.5, desc:'13% EBITDA growth · 12x exit · multiple expansion' },
+  down:   { label:'Downside',      growth:3,  entry:10, exit:8,  lev:4.5, desc:'3% EBITDA growth · 8x exit · multiple compression' },
+  stress: { label:'Stress / Recession', growth:-2, entry:10, exit:7, lev:5, desc:'-2% EBITDA growth · 7x exit · high leverage · tests debt serviceability' },
+};
+
+function applyScenario(key) {
+  const s = SCENARIOS[key];
+  // sliders
+  document.getElementById('sl-growth').value = s.growth;
+  document.getElementById('sl-entry').value  = s.entry;
+  document.getElementById('sl-exit').value   = s.exit;
+  document.getElementById('sl-lev').value    = s.lev;
+  updateLabel('sl-growth','lbl-growth','%');
+  updateLabel('sl-entry','lbl-entry','x');
+  updateLabel('sl-exit','lbl-exit','x');
+  updateLabel('sl-lev','lbl-lev','x');
+  // tab highlight
+  document.querySelectorAll('.scenario-tab').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('scenario-desc').textContent = s.label + ': ' + s.desc;
+  // Show comparison table if results are visible
+  if (!document.getElementById('results').hidden) {
+    showScenarioCompare(key);
+  }
+}
+
+function showScenarioCompare(activeKey) {
+  const panel = document.getElementById('scenario-compare-panel');
+  const table = document.getElementById('scenario-compare-table');
+  const base = SCENARIOS.base;
+  const active = SCENARIOS[activeKey];
+  panel.hidden = false;
+  document.getElementById('scenario-compare-head').textContent =
+    activeKey === 'base' ? 'Base Case Assumptions' : `Scenario Comparison: Base vs ${active.label}`;
+
+  const rows = [
+    ['EBITDA Growth / yr', g => g.growth.toFixed(1)+'%'],
+    ['Entry Multiple',     g => g.entry.toFixed(1)+'x'],
+    ['Exit Multiple',      g => g.exit.toFixed(1)+'x'],
+    ['Leverage (Debt/EBITDA)', g => g.lev.toFixed(2)+'x'],
+  ];
+
+  table.innerHTML = `
+    <thead><tr>
+      <th>Assumption</th>
+      <th>Base Case</th>
+      ${activeKey !== 'base' ? `<th>${active.label}</th>` : ''}
+    </tr></thead>
+    <tbody>
+      ${rows.map(([label, fn]) => `
+        <tr>
+          <td>${label}</td>
+          <td>${fn(base)}</td>
+          ${activeKey !== 'base' ? `<td style="color:${fn(active)!==fn(base)?'var(--gold)':'inherit'}">${fn(active)}</td>` : ''}
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+
+// enter key handled in onTickerKey above
+
+// ─── init slider labels ─────────────────────────────────────────────────────
+updateLabel('sl-entry','lbl-entry','x');
+updateLabel('sl-lev','lbl-lev','x');
+updateLabel('sl-growth','lbl-growth','%');
+updateLabel('sl-hold','lbl-hold',' yrs');
+updateLabel('sl-exit','lbl-exit','x');
+</script>
